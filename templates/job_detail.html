@@ -8,7 +8,7 @@
   <a href="/jobs/{{ job.id }}/export.csv" class="bg-indigo-600 text-white px-4 py-2 rounded">Export CSV</a>
 </div>
 
-<form action="/jobs/{{ job.id }}/resumes/upload" method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow mb-6">
+<form id="resume-upload-form" action="/jobs/{{ job.id }}/resumes/upload" method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow mb-6">
   <label class="block mb-2 font-medium">Загрузить резюме (.pdf/.docx/.txt, до 5MB)</label>
   <input class="border p-2 w-full mb-3" type="file" name="files" multiple required>
   <button class="bg-green-600 text-white px-4 py-2 rounded">Upload + Analyze</button>
@@ -72,34 +72,47 @@
 
   async function refreshAnalysisStatuses() {
     try {
-    const rows = document.querySelectorAll('[data-analysis-id]');
-    if (!rows.length) return;
+      const rows = document.querySelectorAll('[data-analysis-id]');
+      if (!rows.length) return;
 
-    const response = await fetch('/jobs/{{ job.id }}/analyses/status', { headers: { 'Accept': 'application/json' } });
-    if (!response.ok) return;
+      const response = await fetch('/jobs/{{ job.id }}/analyses/status', { headers: { 'Accept': 'application/json' } });
+      if (!response.ok) return;
 
-    const payload = await response.json();
-    const byId = new Map(payload.items.map(item => [String(item.analysis_id), item]));
+      const payload = await response.json();
+      const byId = new Map(payload.items.map(item => [String(item.analysis_id), item]));
 
-    rows.forEach((row) => {
-      const analysis = byId.get(row.dataset.analysisId);
-      if (!analysis) return;
+      rows.forEach((row) => {
+        const analysis = byId.get(row.dataset.analysisId);
+        if (!analysis) return;
 
-      row.querySelector('.js-status').textContent = analysis.status;
-      row.querySelector('.js-score-total').textContent = analysis.score_total;
-      row.querySelector('.js-score-hard').textContent = analysis.score_hard;
-      row.querySelector('.js-score-soft').textContent = analysis.score_soft;
-      row.querySelector('.js-score-sanity').textContent = analysis.score_sanity;
+        row.querySelector('.js-status').textContent = analysis.status;
+        row.querySelector('.js-score-total').textContent = analysis.score_total;
+        row.querySelector('.js-score-hard').textContent = analysis.score_hard;
+        row.querySelector('.js-score-soft').textContent = analysis.score_soft;
+        row.querySelector('.js-score-sanity').textContent = analysis.score_sanity;
 
-      const labelEl = row.querySelector('.js-label');
-      if (labelEl) {
-        labelEl.textContent = analysis.label;
-        labelEl.className = `js-label px-2 py-1 rounded ${labelClasses[analysis.label] || labelClasses.red}`;
-      }
-    });
+        const labelEl = row.querySelector('.js-label');
+        if (labelEl) {
+          labelEl.textContent = analysis.label;
+          labelEl.className = `js-label px-2 py-1 rounded ${labelClasses[analysis.label] || labelClasses.red}`;
+        }
+      });
     } catch (_) {
       // ignore transient polling errors
     }
+  }
+
+  const uploadForm = document.getElementById('resume-upload-form');
+  if (uploadForm) {
+    uploadForm.addEventListener('submit', () => {
+      sessionStorage.setItem('jobDetailRestoreScrollY', String(window.scrollY));
+    });
+  }
+
+  const restoreY = sessionStorage.getItem('jobDetailRestoreScrollY');
+  if (restoreY !== null) {
+    sessionStorage.removeItem('jobDetailRestoreScrollY');
+    requestAnimationFrame(() => window.scrollTo(0, Number(restoreY)));
   }
 
   refreshAnalysisStatuses();
