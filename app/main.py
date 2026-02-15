@@ -18,18 +18,12 @@ from .services.scoring import analyze_resume
 
 Base.metadata.create_all(bind=engine)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-STATIC_DIR = BASE_DIR / "static"
-TEMPLATES_DIR = BASE_DIR / "templates"
-STORAGE_DIR = BASE_DIR / "storage"
-
-STATIC_DIR.mkdir(exist_ok=True)
-STORAGE_DIR.mkdir(exist_ok=True)
-
 app = FastAPI(title="QA Resume Analyzer MVP")
 app.add_middleware(SessionMiddleware, secret_key="mvp-secret-key")
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+STORAGE_DIR = Path("storage")
+STORAGE_DIR.mkdir(exist_ok=True)
 
 
 def current_user(request: Request, db: Session) -> User:
