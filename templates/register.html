@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Register</title>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <form class="bg-white p-6 rounded shadow w-96" action="/register" method="post">
+    <h1 class="text-xl font-semibold mb-4">Регистрация</h1>
+    {% if error %}<p class="text-red-600 text-sm mb-2">{{ error }}</p>{% endif %}
+    <input class="border w-full mb-3 p-2" type="text" name="org_name" placeholder="Company / Org" required>
+    <input class="border w-full mb-3 p-2" type="email" name="email" placeholder="Email" required>
+    <input class="border w-full mb-3 p-2" type="password" name="password" placeholder="Password" required>
+    <button class="bg-blue-600 text-white px-4 py-2 rounded w-full">Create account</button>
+    <p class="text-sm mt-3"><a class="text-blue-600" href="/login">← Назад ко входу</a></p>
+  </form>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-4">Новая вакансия</h1>
+<form action="/jobs" method="post" class="bg-white p-4 rounded shadow space-y-3">
+  <input class="border p-2 w-full" name="title" placeholder="Название" required>
+  <textarea class="border p-2 w-full h-48" name="description" placeholder="Описание вакансии" required></textarea>
+  <textarea class="border p-2 w-full h-24" name="config_json" placeholder='{"weights":{"hard":0.6,"soft":0.2,"sanity":0.2}}'>{}</textarea>
+  <button class="bg-blue-600 text-white px-4 py-2 rounded">Создать</button>
+</form>
+{% endblock %}
