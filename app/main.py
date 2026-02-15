@@ -145,7 +145,6 @@ def create_job(
     request: Request,
     title: str = Form(...),
     description_file: UploadFile = File(...),
-    config_json: str = Form("{}"),
     db: Session = Depends(get_db),
 ):
     user = current_user(request, db)
@@ -165,7 +164,7 @@ def create_job(
     if not description_text:
         raise HTTPException(status_code=400, detail="Description file does not contain readable text")
 
-    job = Job(org_id=user.org_id, title=title, description=description_text, config_json=config_json, created_by=user.id)
+    job = Job(org_id=user.org_id, title=title, description=description_text, config_json="{}", created_by=user.id)
     db.add(job)
     db.commit()
     db.refresh(job)
@@ -192,6 +191,35 @@ def job_detail(request: Request, job_id: int, db: Session = Depends(get_db)):
         view_rows.append({"analysis": row, "resume": row.resume, "details": details})
 
     return templates.TemplateResponse("job_detail.html", {"request": request, "job": job, "rows": view_rows})
+
+@app.get("/jobs/{job_id}/analyses/status")
+def job_analyses_status(request: Request, job_id: int, db: Session = Depends(get_db)):
+    user = current_user(request, db)
+    job = db.query(Job).filter(Job.id == job_id, Job.org_id == user.org_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    analyses = (
+        db.query(Analysis)
+        .join(Resume, Analysis.resume_id == Resume.id)
+        .filter(Analysis.job_id == job.id, Resume.org_id == user.org_id)
+        .all()
+    )
+
+    return {
+        "items": [
+            {
+                "analysis_id": a.id,
+                "status": a.status,
+                "score_total": a.score_total,
+                "score_hard": a.score_hard,
+                "score_soft": a.score_soft,
+                "score_sanity": a.score_sanity,
+                "label": a.label,
+            }
+            for a in analyses
+        ]
+    }
 
 
 @app.post("/jobs/{job_id}/resumes/upload")

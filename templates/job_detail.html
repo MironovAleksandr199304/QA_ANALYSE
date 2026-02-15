@@ -29,7 +29,7 @@
     </thead>
     <tbody>
       {% for row in rows %}
-      <tr class="border-t align-top">
+      <tr class="border-t align-top" data-analysis-id="{{ row.analysis.id }}">
         <td class="p-3">
           <details>
             <summary class="cursor-pointer text-blue-600">{{ row.resume.filename }}</summary>
@@ -41,18 +41,18 @@
             </div>
           </details>
         </td>
-        <td class="p-3">{{ row.analysis.status }}</td>
-        <td class="p-3">{{ row.analysis.score_total }}</td>
-        <td class="p-3">{{ row.analysis.score_hard }}</td>
-        <td class="p-3">{{ row.analysis.score_soft }}</td>
-        <td class="p-3">{{ row.analysis.score_sanity }}</td>
-        <td class="p-3">
+        <td class="p-3 js-status">{{ row.analysis.status }}</td>
+        <td class="p-3 js-score-total">{{ row.analysis.score_total }}</td>
+        <td class="p-3 js-score-hard">{{ row.analysis.score_hard }}</td>
+        <td class="p-3 js-score-soft">{{ row.analysis.score_soft }}</td>
+        <td class="p-3 js-score-sanity">{{ row.analysis.score_sanity }}</td>
+        <td class="p-3 js-label-cell">
           {% if row.analysis.label == 'green' %}
-          <span class="px-2 py-1 rounded bg-green-100 text-green-800">green</span>
+          <span class="js-label px-2 py-1 rounded bg-green-100 text-green-800">green</span>
           {% elif row.analysis.label == 'yellow' %}
-          <span class="px-2 py-1 rounded bg-yellow-100 text-yellow-800">yellow</span>
+          <span class="js-label px-2 py-1 rounded bg-yellow-100 text-yellow-800">yellow</span>
           {% else %}
-          <span class="px-2 py-1 rounded bg-red-100 text-red-800">red</span>
+          <span class="js-label px-2 py-1 rounded bg-red-100 text-red-800">red</span>
           {% endif %}
         </td>
       </tr>
@@ -62,4 +62,47 @@
     </tbody>
   </table>
 </div>
+
+<script>
+  const labelClasses = {
+    green: 'bg-green-100 text-green-800',
+    yellow: 'bg-yellow-100 text-yellow-800',
+    red: 'bg-red-100 text-red-800'
+  };
+
+  async function refreshAnalysisStatuses() {
+    try {
+    const rows = document.querySelectorAll('[data-analysis-id]');
+    if (!rows.length) return;
+
+    const response = await fetch('/jobs/{{ job.id }}/analyses/status', { headers: { 'Accept': 'application/json' } });
+    if (!response.ok) return;
+
+    const payload = await response.json();
+    const byId = new Map(payload.items.map(item => [String(item.analysis_id), item]));
+
+    rows.forEach((row) => {
+      const analysis = byId.get(row.dataset.analysisId);
+      if (!analysis) return;
+
+      row.querySelector('.js-status').textContent = analysis.status;
+      row.querySelector('.js-score-total').textContent = analysis.score_total;
+      row.querySelector('.js-score-hard').textContent = analysis.score_hard;
+      row.querySelector('.js-score-soft').textContent = analysis.score_soft;
+      row.querySelector('.js-score-sanity').textContent = analysis.score_sanity;
+
+      const labelEl = row.querySelector('.js-label');
+      if (labelEl) {
+        labelEl.textContent = analysis.label;
+        labelEl.className = `js-label px-2 py-1 rounded ${labelClasses[analysis.label] || labelClasses.red}`;
+      }
+    });
+    } catch (_) {
+      // ignore transient polling errors
+    }
+  }
+
+  refreshAnalysisStatuses();
+  setInterval(refreshAnalysisStatuses, 3000);
+</script>
 {% endblock %}
